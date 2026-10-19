@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { jwtVerify, createRemoteJWKSet, type JWTPayload } from 'jose';
 import { randomUUID } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { AdminSession } from '../../database/entities/admin-session.entity';
 import { AdminUser } from '../../database/entities/admin-user.entity';
 import { AuditEvent } from '../../database/entities/audit-event.entity';
@@ -24,4 +24,5 @@ export class AdminAuthService {
     return { sessionId: session.id, expiresAt: session.expiresAt.toISOString() };
   }
   async revoke(sessionId: string) { await this.sessions.update({ id: sessionId }, { revokedAt: new Date() }); return { revoked: true }; }
+  async validateSession(sessionId: string) { const session = await this.sessions.findOne({ where: { id: sessionId, revokedAt: IsNull() } }); if (!session || session.expiresAt.getTime() <= Date.now()) return null; return this.admins.findOne({ where: { id: session.adminUserId, active: true } }); }
 }
