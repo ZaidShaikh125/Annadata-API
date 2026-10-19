@@ -1,0 +1,3 @@
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+@Entity('food_listings')
+export class FoodListing { @PrimaryGeneratedColumn('uuid') id!: string; @Column() title!: string; @Column({ default: 'active' }) status!: string; @Column({ default: 'other' }) category!: string; @Column({ default: 0 }) totalQuantity!: number; @Column({ default: 0 }) reservedQuantity!: number; @Column({ default: 0 }) collectedQuantity!: number; @Column({ default: 0 }) unavailableQuantity!: number; @Column({ nullable: true }) geography!: string | null; @Column({ type: 'timestamptz', nullable: true }) expiresAt!: Date | null; }

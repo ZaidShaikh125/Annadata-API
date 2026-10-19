@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+@Entity('admin_users')
+export class AdminUser { @PrimaryGeneratedColumn('uuid') id!: string; @Column({ unique: true }) entraObjectId!: string; @Column() email!: string; @Column() displayName!: string; @Column('text', { array: true }) roles!: string[]; @Column('text', { array: true }) permissions!: string[]; @Column('text', { array: true, default: '{}' }) geographyScopes!: string[]; @Column({ default: true }) active!: boolean; @Column({ default: false }) superAdmin!: boolean; @CreateDateColumn() createdAt!: Date; @UpdateDateColumn() updatedAt!: Date; }

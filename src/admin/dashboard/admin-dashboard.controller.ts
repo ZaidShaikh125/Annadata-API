@@ -1,0 +1,2 @@
+import { Controller, Get, Query } from '@nestjs/common'; import { ApiTags } from '@nestjs/swagger'; import { AdminDashboardService } from './admin-dashboard.service';
+@ApiTags('admin-dashboard') @Controller('admin/dashboard') export class AdminDashboardController { constructor(private readonly dashboard: AdminDashboardService) {} @Get() get(@Query('range') _range?: string, @Query('geography') _geography?: string) { return this.dashboard.get(); } }
