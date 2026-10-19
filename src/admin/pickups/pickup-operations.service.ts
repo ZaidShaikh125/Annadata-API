@@ -1,0 +1,18 @@
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { AuditEvent } from '../../database/entities/audit-event.entity';
+import { FoodListing } from '../../database/entities/food-listing.entity';
+import { FoodRequest } from '../../database/entities/food-request.entity';
+import { Pickup } from '../../database/entities/pickup.entity';
+import type { AdminRequestUser } from '../auth/admin-auth.types';
+
+@Injectable()
+export class PickupOperationsService {
+  constructor(@InjectRepository(Pickup) private readonly pickups: Repository<Pickup>, @InjectRepository(FoodRequest) private readonly requests: Repository<FoodRequest>, @InjectRepository(FoodListing) private readonly foods: Repository<FoodListing>, @InjectRepository(AuditEvent) private readonly audit: Repository<AuditEvent>, private readonly dataSource: DataSource) {}
+  listPickups(status?: string, issueType?: string) { const query = this.pickups.createQueryBuilder('pickup').orderBy('pickup.scheduledAt', 'ASC'); if (status) query.andWhere('pickup.status = :status', { status }); if (issueType) query.andWhere('pickup.disputeStatus = :issueType', { issueType }); return query.getMany(); }
+  async getPickup(id: string) { const pickup = await this.pickups.findOne({ where: { id } }); if (!pickup) throw new NotFoundException('Pickup not found.'); return pickup; }
+  listRequests(status?: string) { return this.requests.find({ where: status ? { status } : undefined, order: { createdAt: 'DESC' } }); }
+  async flagDispute(id: string, reason: string, actor: AdminRequestUser) { const pickup = await this.getPickup(id); pickup.disputeStatus = 'open'; await this.pickups.save(pickup); await this.audit.save(this.audit.create({ actorAdminUserId: actor.admin.id, action: 'pickup.dispute.opened', entityType: 'pickup', entityId: id, outcome: 'success', correlationId: null, metadata: { reason } })); return pickup; }
+  async completePickup(id: string, actor: AdminRequestUser) { return this.dataSource.transaction(async (manager) => { const pickup = await manager.getRepository(Pickup).createQueryBuilder('pickup').setLock('pessimistic_write').where('pickup.id = :id', { id }).getOne(); if (!pickup) throw new NotFoundException('Pickup not found.'); if (pickup.status === 'completed') return pickup; if (pickup.status === 'cancelled') throw new ConflictException('Cancelled pickups cannot be completed.'); const listing = await manager.getRepository(FoodListing).createQueryBuilder('food').setLock('pessimistic_write').where('food.id = :id', { id: pickup.listingId }).getOne(); if (!listing) throw new NotFoundException('Food listing not found.'); const available = listing.totalQuantity - listing.reservedQuantity - listing.collectedQuantity - listing.unavailableQuantity; if (pickup.quantity > available + listing.reservedQuantity) throw new ConflictException('Pickup quantity exceeds the protected inventory allocation.'); listing.collectedQuantity += pickup.quantity; if (listing.reservedQuantity >= pickup.quantity) listing.reservedQuantity -= pickup.quantity; await manager.save(listing); pickup.status = 'completed'; pickup.verificationStatus = 'verified'; pickup.completedAt = new Date(); await manager.save(pickup); await manager.save(manager.getRepository(AuditEvent).create({ actorAdminUserId: actor.admin.id, action: 'pickup.completed', entityType: 'pickup', entityId: id, outcome: 'success', correlationId: null, metadata: { quantity: pickup.quantity, listingId: listing.id } })); return pickup; }); }
+}

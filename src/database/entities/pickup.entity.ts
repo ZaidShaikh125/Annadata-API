@@ -1,3 +1,3 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity('pickups')
-export class Pickup { @PrimaryGeneratedColumn('uuid') id!: string; @Column({ default: 'scheduled' }) status!: string; @Column({ default: 0 }) quantity!: number; @Column({ type: 'timestamptz', nullable: true }) scheduledAt!: Date | null; }
+export class Pickup { @PrimaryGeneratedColumn('uuid') id!: string; @Column() requestId!: string; @Column() listingId!: string; @Column() recipientId!: string; @Column({ nullable: true }) communityId!: string | null; @Column({ default: 'scheduled' }) status!: string; @Column({ default: 0 }) quantity!: number; @Column({ default: 'pending' }) verificationStatus!: string; @Column({ default: 'none' }) disputeStatus!: string; @Column({ type: 'timestamptz', nullable: true }) scheduledAt!: Date | null; @Column({ type: 'timestamptz', nullable: true }) completedAt!: Date | null; }
