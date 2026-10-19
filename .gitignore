@@ -3,3 +3,4 @@ dist/
 .jest-cache/
 .env
 *.log
+var/

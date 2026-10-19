@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+@Entity('support_tickets')
+export class SupportTicket { @PrimaryGeneratedColumn('uuid') id!: string; @Column({ nullable: true }) requesterUserId!: string | null; @Column({ nullable: true }) communityId!: string | null; @Column() category!: string; @Column() subject!: string; @Column({ default: 'normal' }) priority!: string; @Column({ nullable: true }) assignedAdminId!: string | null; @Column({ default: 'new' }) status!: string; @Column({ nullable: true }) relatedEntityType!: string | null; @Column({ nullable: true }) relatedEntityId!: string | null; @CreateDateColumn() createdAt!: Date; @UpdateDateColumn() updatedAt!: Date; }

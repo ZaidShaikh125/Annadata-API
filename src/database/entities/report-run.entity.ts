@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+@Entity('report_runs')
+export class ReportRun { @PrimaryGeneratedColumn('uuid') id!: string; @Column() reportDefinitionId!: string; @Column() requestedByAdminId!: string; @Column({ type: 'jsonb', default: {} }) filters!: Record<string, unknown>; @Column({ default: 'queued' }) status!: string; @Column({ type: 'jsonb', nullable: true }) resultSummary!: Record<string, unknown> | null; @Column({ type: 'text', nullable: true }) errorSummary!: string | null; @CreateDateColumn() createdAt!: Date; @Column({ type: 'timestamptz', nullable: true }) completedAt!: Date | null; }

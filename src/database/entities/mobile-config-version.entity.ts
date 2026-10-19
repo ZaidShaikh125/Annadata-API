@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+@Entity('mobile_config_versions')
+export class MobileConfigVersion { @PrimaryGeneratedColumn('uuid') id!: string; @Column() platform!: string; @Column() audience!: string; @Column() schemaVersion!: number; @Column() publishedVersion!: number; @Column({ type: 'jsonb' }) configuration!: Record<string, unknown>; @Column({ default: 'draft' }) status!: string; @Column({ nullable: true }) publishedByAdminId!: string | null; @Column({ type: 'timestamptz', nullable: true }) publishedAt!: Date | null; @CreateDateColumn() createdAt!: Date; }

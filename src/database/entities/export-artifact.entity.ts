@@ -1,0 +1,3 @@
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+@Entity('export_artifacts')
+export class ExportArtifact { @PrimaryGeneratedColumn('uuid') id!: string; @Column() reportRunId!: string; @Column() requestedByAdminId!: string; @Column({ default: 'queued' }) status!: string; @Column({ nullable: true }) storageKey!: string | null; @Column({ nullable: true }) contentType!: string | null; @Column({ type: 'bigint', nullable: true }) byteSize!: string | null; @Column({ type: 'timestamptz', nullable: true }) expiresAt!: Date | null; @Column({ type: 'timestamptz', nullable: true }) downloadedAt!: Date | null; @CreateDateColumn() createdAt!: Date; }

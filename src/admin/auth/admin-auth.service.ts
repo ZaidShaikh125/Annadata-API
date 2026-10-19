@@ -17,12 +17,14 @@ export class AdminAuthService {
     const jwks = createRemoteJWKSet(new URL(`https://login.microsoftonline.com/${tenant}/discovery/v2.0/keys`));
     let payload: JWTPayload;
     try { ({ payload } = await jwtVerify(accessToken, jwks, { issuer, audience })); } catch { throw new UnauthorizedException('Invalid Microsoft Entra access token.'); }
+    if (payload.tid !== tenant) throw new UnauthorizedException('Microsoft Entra tenant mismatch.');
+    const requiredScope=process.env.ENTRA_REQUIRED_SCOPE; const scopes=typeof payload.scp==='string'?payload.scp.split(' '):[]; if(requiredScope&&!scopes.includes(requiredScope))throw new UnauthorizedException('Required admin API scope is missing.');
     const objectId = typeof payload.oid === 'string' ? payload.oid : undefined; if (!objectId) throw new UnauthorizedException('Missing immutable identity identifier.');
     const admin = await this.admins.findOne({ where: { entraObjectId: objectId, active: true } }); if (!admin) throw new UnauthorizedException('Identity is not an approved administrator.');
-    const session = this.sessions.create({ id: randomUUID(), adminUserId: admin.id, expiresAt: new Date(Date.now() + Number(process.env.ADMIN_SESSION_TTL_SECONDS ?? 28800) * 1000), revokedAt: null, ipAddress: context.ip ?? null, userAgent: context.userAgent ?? null }); await this.sessions.save(session);
+    const session = this.sessions.create({ id: randomUUID(), adminUserId: admin.id, expiresAt: new Date(Date.now() + Number(process.env.ADMIN_SESSION_TTL_SECONDS ?? 28800) * 1000), revokedAt: null, ipAddress: context.ip ?? null, userAgent: context.userAgent ?? null,lastActivityAt:new Date() }); await this.sessions.save(session); admin.lastLoginAt=new Date();await this.admins.save(admin);
     await this.audit.save(this.audit.create({ actorAdminUserId: admin.id, action: 'admin.session.created', entityType: 'admin_session', entityId: session.id, outcome: 'success', correlationId: null, metadata: { provider: 'entra' } }));
     return { sessionId: session.id, expiresAt: session.expiresAt.toISOString() };
   }
-  async revoke(sessionId: string) { await this.sessions.update({ id: sessionId }, { revokedAt: new Date() }); return { revoked: true }; }
-  async validateSession(sessionId: string) { const session = await this.sessions.findOne({ where: { id: sessionId, revokedAt: IsNull() } }); if (!session || session.expiresAt.getTime() <= Date.now()) return null; return this.admins.findOne({ where: { id: session.adminUserId, active: true } }); }
+  async revoke(sessionId: string,actorAdminUserId?:string) { await this.sessions.update({ id: sessionId }, { revokedAt: new Date() });if(actorAdminUserId)await this.audit.save(this.audit.create({actorAdminUserId,action:'admin.session.revoked',entityType:'admin_session',entityId:sessionId,outcome:'success',correlationId:null,metadata:{}})); return { revoked: true }; }
+  async validateSession(sessionId: string) { const session = await this.sessions.findOne({ where: { id: sessionId, revokedAt: IsNull() } }); if (!session || session.expiresAt.getTime() <= Date.now()) return null; if(!session.lastActivityAt||Date.now()-session.lastActivityAt.getTime()>300000){session.lastActivityAt=new Date();await this.sessions.save(session)} return this.admins.findOne({ where: { id: session.adminUserId, active: true } }); }
 }
