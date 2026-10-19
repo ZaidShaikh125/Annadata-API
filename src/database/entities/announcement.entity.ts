@@ -1,0 +1,3 @@
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+@Entity('announcements')
+export class Announcement { @PrimaryGeneratedColumn('uuid') id!: string; @Column() title!: string; @Column({ type: 'text' }) body!: string; @Column({ type: 'jsonb' }) audience!: Record<string, unknown>; @Column({ default: 'in_app' }) channel!: string; @Column({ default: 'en' }) language!: string; @Column({ default: 'draft' }) status!: string; @Column({ nullable: true }) createdByAdminUserId!: string | null; @Column({ type: 'timestamptz', nullable: true }) scheduledAt!: Date | null; @Column({ type: 'timestamptz', nullable: true }) publishedAt!: Date | null; @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' }) createdAt!: Date; }

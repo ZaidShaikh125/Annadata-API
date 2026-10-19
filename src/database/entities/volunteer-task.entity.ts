@@ -1,0 +1,3 @@
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+@Entity('volunteer_tasks')
+export class VolunteerTask { @PrimaryGeneratedColumn('uuid') id!: string; @Column() title!: string; @Column() communityId!: string; @Column() locationSummary!: string; @Column({ type: 'timestamptz' }) startsAt!: Date; @Column({ type: 'timestamptz' }) endsAt!: Date; @Column({ type: 'text', nullable: true }) instructions!: string | null; @Column({ nullable: true }) assignedVolunteerId!: string | null; @Column({ default: 'unassigned' }) status!: string; @Column({ default: 'pending' }) attendanceStatus!: string; @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' }) createdAt!: Date; }
